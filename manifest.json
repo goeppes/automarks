@@ -1,0 +1,19 @@
+{
+  "manifest_version": 2,
+  "name": "Automarks",
+  "version": "1.0.0",
+  "description": "Automatically sorts bookmarks.",
+
+  "permissions": [
+    "bookmarks",
+    "storage"
+  ],
+
+  "browser_action": {
+    "default_title": "Automarks"
+  },
+
+  "background": {
+    "scripts": ["automarks.js"]
+  }
+}
