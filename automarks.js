@@ -11,34 +11,21 @@ function comparator(a, b) {
   //let field = "url";
   let reverse = false;
 
-  function folders(a, b) {
+  if (foldersMode) {
     if (a.type === "folder" && b.type === "folder") {
       if (a.title.toLowerCase() < b.title.toLowerCase()) { return -1; }
       if (a.title.toLowerCase() > b.title.toLowerCase()) { return 1; }
       return 0;
     }
-
-    if (a.type === "folder") { return -1; }
-    if (b.type === "folder") { return 1; }
-
-    return undefined;
+    if (a.type === "folder") { return -foldersMode; }
+    if (b.type === "folder") { return foldersMode; }
   }
 
-  function compare(a, b) {
-    if (foldersMode) {
-      let result = folders(a, b);
-      if (result !== undefined) {
-        return result * foldersMode;
-      }
-    }
-
-    if (a[field].toLowerCase() < b[field].toLowerCase()) { return -1; }
-    if (a[field].toLowerCase() > b[field].toLowerCase()) { return 1; }
-
-    return 0;
-  }
-
-  return compare(a, b) * (reverse ? -1 : 1);
+  let result = 0;
+  if (a[field].toLowerCase() < b[field].toLowerCase()) { result = -1; }
+  if (a[field].toLowerCase() > b[field].toLowerCase()) { result = 1; }
+  
+  return result * (reverse ? -1 : 1);
 }
 
 /**
@@ -78,16 +65,17 @@ function autosort(entries) {
   let sync = new Promise(resolve => { resolve(null); });
   for (let i = 0; i < contents.length; i++) {
     sync = sync.then(() => {
-      browser.bookmarks.move(contents[i].id, {index: i})
+      return browser.bookmarks.move(contents[i].id, {index: i})
     }).then(resolve => {
       // do nothing?
+      console.log(resolve);
     }, reject => {
       console.log("error");
       console.log(reject);
     });
   }
 
-  console.log("done autosorting");
+  sync.then(() => console.log("done autosorting"));
 }
 
 /**
@@ -95,22 +83,14 @@ function autosort(entries) {
  */
 function autosortAll() {
 
-  function autosortNode(nodes) {
-    if (typeof nodes !== "undefined") {
-      for (let node of nodes) {
-        console.log(node);
-        if (node.type === "folder") {
-          autosortNode(node.children);
-        }
-      }
-      autosort(nodes);
-    } else {
-      console.log(`what is this? ${nodes}`);
-    }
+  function recurse(nodes) {
+    nodes.filter(e => e.type === "folder")
+      .forEach(e => recurse(e.children));
+    autosort(nodes);
   }
 
   browser.bookmarks.getSubTree("menu________")
-    .then(([menu]) => autosortNode(menu.children));
+    .then(([menu]) => recurse(menu.children));
 }
 
 // Events
@@ -123,7 +103,8 @@ function handleCreated(id, bookmark) {
 function handleChanged(id, changeInfo) {
   console.log("change triggered!");
   browser.bookmarks.get(id)
-    .then(([bookmark]) => browser.bookmarks.getChildren(bookmark.parentId))
+    .then(([bookmark]) => bookmark.parentId)
+    .then(browser.bookmarks.getChildren)
     .then(autosort);
 }
 
