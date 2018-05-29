@@ -56,8 +56,8 @@ function buildComparator() {
  */
 function autosort(id) {
 
-  function organize(entries, buildingCompare) {
-    return buildingCompare.then(compare => {
+  function organize(entries) {
+    return buildComparator().then(compare => {
 
       function append(contents, section) {
         section.sort(compare);
@@ -77,7 +77,7 @@ function autosort(id) {
       }
 
       if (isSorted(entries)) {
-        console.log("is already sorted");
+        console.log(`canceled:autosort(${id}), is already sorted`);
         return;
       }
 
@@ -109,7 +109,7 @@ function autosort(id) {
     active.add(id);
     console.log(`starting:autosort(${id})`);
     browser.bookmarks.getChildren(id)
-      .then(entries => organize(entries, buildComparator()))
+      .then(organize)
       .then(() => {
         console.log(`finished:autosort(${id})`)
         setTimeout(() => {
