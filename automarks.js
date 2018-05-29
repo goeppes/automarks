@@ -101,6 +101,7 @@ function autosort(id) {
         })
         .then(bookmark => console.log(bookmark));
       }
+      return sync;
     });
   }
 
