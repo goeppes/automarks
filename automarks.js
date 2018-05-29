@@ -4,42 +4,49 @@
 var active = new Set();
 
 /**
- * Compares a and b.
- *
- * @param a A BookmarkTreeNode object.
- * @param b A BookmarkTreeNode object.
- * @returns {integer}
+ * Builds a comparator.
  */
-function comparator(a, b) {
-  let foldersMode = 1;
-  let field = "title";
-  //let field = "url";
-  let isReversed = false;
-  let isCaseSensitive = false;
+function buildComparator() {
+  return browser.storage.local.get().then(settings => {
+    let foldersMode = 1;
+    let field = "title";
+    //let field = "url";
+    let isReversed = settings.reversed;
+    let isCaseSensitive = false;
+    
+    function compare(a, b) {
+      if (foldersMode) {
+        if (a.type === "folder" && b.type === "folder") {
+          let titleA = isCaseSensitive ? a.title : a.title.toLowerCase();
+          let titleB = isCaseSensitive ? b.title : b.title.toLowerCase();
 
-  function compare(a, b) {
-    if (foldersMode) {
-      if (a.type === "folder" && b.type === "folder") {
-        let titleA = isCaseSensitive ? a.title : a.title.toLowerCase();
-        let titleB = isCaseSensitive ? b.title : b.title.toLowerCase();
+          if (titleA < titleB) { return -1; }
+          if (titleA > titleB) { return 1; }
 
-        if (titleA < titleB) { return -1; }
-        if (titleA > titleB) { return 1; }
-
-        return 0;
+          return 0;
+        }
+        if (a.type === "folder") { return -foldersMode; }
+        if (b.type === "folder") { return foldersMode; }
       }
-      if (a.type === "folder") { return -foldersMode; }
-      if (b.type === "folder") { return foldersMode; }
+
+      let fieldA = isCaseSensitive ? a[field] : a[field].toLowerCase();
+      let fieldB = isCaseSensitive ? b[field] : b[field].toLowerCase();
+
+      if (fieldA < fieldB) { return -1; }
+      if (fieldA > fieldB) { return 1; }
     }
 
-    let fieldA = isCaseSensitive ? a[field] : a[field].toLowerCase();
-    let fieldB = isCaseSensitive ? b[field] : b[field].toLowerCase();
-
-    if (fieldA < fieldB) { return -1; }
-    if (fieldA > fieldB) { return 1; }
-  }
-  
-  return compare(a, b) * (isReversed ? -1 : 1);
+    /**
+     * Comparator function for BookmarkTreeNodes. Compares a and b.
+     *
+     * @param a A BookmarkTreeNode object.
+     * @param b A BookmarkTreeNode object.
+     * @returns {integer}
+     */
+    return function(a, b) {
+      return compare(a, b) * (isReversed ? -1 : 1);
+    }
+  });
 }
 
 /**
@@ -49,28 +56,34 @@ function comparator(a, b) {
  */
 function autosort(id) {
 
-  function append(contents, section) {
-    section.sort(comparator);
-    Array.prototype.push.apply(contents, section);
-    section.length = 0;
-  }
+  function organize(entries, buildingCompare) {
+    return buildingCompare.then(compare => {
 
-  function isSorted(array) {
-    for (let i = 1; i < array.length; i++) {
-      if (array[i - 1].type !== "separator"
-          && array[i].type !== "separator"
-          && comparator(array[i - 1], array[i]) > 0) {
-        return [array, false];
+      function append(contents, section) {
+        section.sort(compare);
+        Array.prototype.push.apply(contents, section);
+        section.length = 0;
       }
-    }
-    return [array, true];
-  }
 
-  function organize([entries, sorted]) {
-    let contents = [];
-    let section = [];
+      function isSorted(array) {
+        for (let i = 1; i < array.length; i++) {
+          if (array[i - 1].type !== "separator"
+              && array[i].type !== "separator"
+              && compare(array[i - 1], array[i]) > 0) {
+            return false;
+          }
+        }
+        return true;
+      }
 
-    if (!sorted) {
+      if (isSorted(entries)) {
+        console.log("is already sorted");
+        return;
+      }
+
+      let contents = [];
+      let section = [];
+
       for (let entry of entries) {
         if (entry.type === "separator") {
           append(contents, section);
@@ -80,33 +93,22 @@ function autosort(id) {
         }
       }
       append(contents, section);
-    }
 
-    return [contents, sorted];
-  }
-
-  function doMoving([contents, sorted]) {
-    let sync = Promise.resolve();
-    if (!sorted) {
+      let sync = Promise.resolve();
       for (let i = 0; i < contents.length; i++) {
         sync = sync.then(() => {
           return browser.bookmarks.move(contents[i].id, {index: i});
         })
         .then(bookmark => console.log(bookmark));
       }
-    } else {
-      console.log("is already sorted");
-    }
-    return sync;
+    });
   }
 
   if (!active.has(id)) {
     active.add(id);
     console.log(`starting:autosort(${id})`);
     browser.bookmarks.getChildren(id)
-      .then(isSorted)
-      .then(organize)
-      .then(doMoving)
+      .then(entries => organize(entries, buildComparator()))
       .then(() => {
         console.log(`finished:autosort(${id})`)
         setTimeout(() => {

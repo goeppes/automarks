@@ -1,8 +1,14 @@
 function save(e) {
   e.preventDefault();
-  browser.storage.local.set({
-    reversed: document.querySelector("#reversed").value
-  });
+
+  let settings = {
+    reversed: document.querySelector("#reversed").checked
+  };
+
+  console.log("Saving settings:");
+  console.log(settings);
+
+  browser.storage.local.set(settings);
 }
 
 function load() {
