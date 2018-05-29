@@ -4,13 +4,27 @@
   <head>
     <meta charset="utf-8">
     <style>
-      .option { display: block; }
+      div {
+        display: block;
+      }
+
+      button {
+        margin-top: 10px;
+      }
     </style>
   </head>
   <body>
     <form>
-      <label class="option">Reversed<input type="checkbox" id="reversed"></label>
-      <button type="submit" class="option">Update</button>
+      <fieldset>
+        <legend>Bookmark Menu</legend>
+        <div>
+          <input type="checkbox" id="reversed">
+          <label for="reversed">Reversed</label>
+        </div>
+      </fieldset>
+      <div>
+        <button type="submit" class="option">Update</button>
+      </div>
     </form>
     <script src="options.js"></script>
   </body>
