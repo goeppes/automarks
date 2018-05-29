@@ -23,6 +23,6 @@
   },
 
   "background": {
-    "scripts": ["automarks.js"]
+    "scripts": ["background.js"]
   }
 }
