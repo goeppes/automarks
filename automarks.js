@@ -97,7 +97,7 @@ function autosort(id) {
     } else {
       console.log("is already sorted");
     }
-    return [sync];
+    return sync;
   }
 
   if (!active.has(id)) {
@@ -107,10 +107,13 @@ function autosort(id) {
       .then(isSorted)
       .then(organize)
       .then(doMoving)
-      .then(([sync]) => sync.then(() => setTimeout(() => {
-        active.delete(id);
+      .then(() => {
         console.log(`finished:autosort(${id})`)
-      }, 3000)));
+        setTimeout(() => {
+          active.delete(id);
+          console.log(`prepared:autosort(${id})`)
+        }, 3000)}
+      );
   }
 }
 
@@ -130,22 +133,18 @@ function autosortAll() {
     .then(([menu]) => recurse(menu));
 }
 
-// Events
+// ====
+// MAIN
+// ====
 
-function handleCreated(id, bookmark) {
-  autosort(bookmark.parentId);
-}
-
-function handleChanged(id, changeInfo) {
+browser.bookmarks.onMoved.addListener((id, changeInfo) => {
   browser.bookmarks.get(id).then(([b]) => autosort(b.parentId));
-}
+})
 
-function handleMoved(id, moveInfo) {
+browser.bookmarks.onCreated.addListener((id, moveInfo) => {
   autosort(moveInfo.parentId);
-}
+});
 
-autosortAll();
-
-browser.bookmarks.onMoved.addListener(handleMoved);
-browser.bookmarks.onCreated.addListener(handleCreated);
-browser.bookmarks.onChanged.addListener(handleChanged);
+browser.bookmarks.onChanged.addListener((id, bookmark) => {
+  autosort(bookmark.parentId);
+});

@@ -10,7 +10,9 @@
   ],
 
   "browser_action": {
-    "default_title": "Automarks"
+    "browser_style": true,
+    "default_title": "Automarks",
+    "default_popup": "popup.html"
   },
 
   "background": {
