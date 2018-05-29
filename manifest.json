@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "description": "Automatically sorts bookmarks.",
 
+  "author": "Stephen Goeppele",
+  "homepage_url": "https://github.com/goeppes/automarks",
+
   "permissions": [
     "bookmarks",
     "storage"
