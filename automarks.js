@@ -34,6 +34,8 @@ function buildComparator() {
 
       if (fieldA < fieldB) { return -1; }
       if (fieldA > fieldB) { return 1; }
+
+      return 0;
     }
 
     /**
