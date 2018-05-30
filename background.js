@@ -6,50 +6,48 @@ var active = new Set();
 /**
  * Builds a comparator.
  */
-function buildComparator() {
-  return browser.storage.local.get().then(settings => {
-    let foldersMode = 1;
-    let field = "title";
-    //let field = "url";
-    let isReversed = settings.reversed;
-    let isCaseSensitive = false;
-    
-    function compare(a, b) {
-      if (foldersMode) {
-        if (a.type === "folder" && b.type === "folder") {
-          let titleA = isCaseSensitive ? a.title : a.title.toLowerCase();
-          let titleB = isCaseSensitive ? b.title : b.title.toLowerCase();
+function buildComparator(settings) {
+  let foldersMode = 1;
+  let field = settings.field;
+  let isReversed = settings.reversed;
+  let isCaseSensitive = false;
+  
+  function compare(a, b) {
+    if (foldersMode) {
+      if (a.type === "folder" && b.type === "folder") {
+        let titleA = isCaseSensitive ? a.title : a.title.toLowerCase();
+        let titleB = isCaseSensitive ? b.title : b.title.toLowerCase();
 
-          if (titleA < titleB) { return -1; }
-          if (titleA > titleB) { return 1; }
+        if (titleA < titleB) { return -1; }
+        if (titleA > titleB) { return 1; }
 
-          return 0;
-        }
-        if (a.type === "folder") { return -foldersMode; }
-        if (b.type === "folder") { return foldersMode; }
+        return 0;
       }
-
-      let fieldA = isCaseSensitive ? a[field] : a[field].toLowerCase();
-      let fieldB = isCaseSensitive ? b[field] : b[field].toLowerCase();
-
-      if (fieldA < fieldB) { return -1; }
-      if (fieldA > fieldB) { return 1; }
-
-      return 0;
+      if (a.type === "folder") { return -foldersMode; }
+      if (b.type === "folder") { return foldersMode; }
     }
 
-    /**
-     * Comparator function for BookmarkTreeNodes. Compares a and b.
-     *
-     * @param a A BookmarkTreeNode object.
-     * @param b A BookmarkTreeNode object.
-     * @returns {integer}
-     */
-    return function(a, b) {
-      return compare(a, b) * (isReversed ? -1 : 1);
-    }
-  });
+    let fieldA = isCaseSensitive || field === "dateAdded" ? a[field] : a[field].toLowerCase();
+    let fieldB = isCaseSensitive || field === "dateAdded" ? b[field] : b[field].toLowerCase();
+
+    if (fieldA < fieldB) { return -1; }
+    if (fieldA > fieldB) { return 1; }
+
+    return 0;
+  }
+
+  /**
+   * Comparator function for BookmarkTreeNodes. Compares a and b.
+   *
+   * @param a A BookmarkTreeNode object.
+   * @param b A BookmarkTreeNode object.
+   * @returns {integer}
+   */
+  return function(a, b) {
+    return compare(a, b) * (isReversed ? -1 : 1);
+  }
 }
+
 
 /**
  * Sort the given entries.
@@ -57,9 +55,10 @@ function buildComparator() {
  * @param {string} id String of the ID of the bookmark folder to sort. 
  */
 function autosort(id) {
+  browser.storage.local.get().then(settings => {
 
-  function organize(entries) {
-    return buildComparator().then(compare => {
+    function organize(entries) {
+      let compare = buildComparator(settings);
 
       function append(contents, section) {
         section.sort(compare);
@@ -104,22 +103,21 @@ function autosort(id) {
         .then(bookmark => console.log(bookmark));
       }
       return sync;
-    });
-  }
+    }
 
-  if (!active.has(id)) {
-    active.add(id);
-    console.log(`starting:autosort(${id})`);
-    browser.bookmarks.getChildren(id)
-      .then(organize)
-      .then(() => {
-        console.log(`finished:autosort(${id})`)
-        setTimeout(() => {
-          active.delete(id);
-          console.log(`prepared:autosort(${id})`)
-        }, 3000)}
-      );
-  }
+    if (!active.has(id)) {
+      active.add(id);
+      console.log(`starting:autosort(${id})`);
+      setTimeout(() => {
+        browser.bookmarks.getChildren(id)
+          .then(organize)
+          .then(() => {
+            active.delete(id);
+            console.log(`finished:autosort(${id})`)
+          });
+      }, settings.delay * 1000);
+    }
+  });
 }
 
 /**

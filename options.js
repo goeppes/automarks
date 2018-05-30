@@ -1,8 +1,12 @@
 function save(e) {
   e.preventDefault();
 
+  let fieldOptions = document.querySelector("#bookmarks-menu-sort-bookmarks-by");
+
   let settings = {
-    reversed: document.querySelector("#reversed").checked
+    field: fieldOptions.options[fieldOptions.selectedIndex].value,
+    reversed: document.querySelector("#bookmarks-menu-bookmarks-reversed").checked,
+    delay: parseInt(document.querySelector("#delay").value)
   };
 
   console.log("Saving settings:");
@@ -14,7 +18,19 @@ function save(e) {
 function load() {
 
   function resolve(item) {
-    document.querySelector("#reversed").value = item.reversed || false;
+    console.log("Loading settings:");
+    console.log(item);
+
+    let fieldOptions = document.querySelector("#bookmarks-menu-sort-bookmarks-by");
+    let indices = {};
+    for (let i = 0; i < fieldOptions.options.length; i++) {
+      indices[fieldOptions.options[i].value] = i;
+    }
+    fieldOptions.selectedIndex = item.field ? indices[item.field] : 0;
+
+    document.querySelector("#bookmarks-menu-bookmarks-reversed").checked = item.reversed || false;
+
+    document.querySelector("#delay").value = (item.delay || "0").toString();
   }
 
   function onError(error) {

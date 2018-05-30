@@ -6,14 +6,31 @@
     <link rel="stylesheet" href="options.css"/>
   </head>
   <body>
-    <form>
+    <form id="settings">
       <fieldset>
         <legend>Bookmark Menu</legend>
         <div>
-          <input type="checkbox" id="reversed">
-          <label for="reversed">Reversed</label>
+          <label for="bookmarks-menu-sort-bookmarks-by">Sort bookmarks by</label>
+          <select id="bookmarks-menu-sort-bookmarks-by" form="settings">
+            <option value="title">Title</option>
+            <option value="url">URL</option>
+            <option value="dateAdded">Date Added</option>
+          </select>
+          <input id="bookmarks-menu-bookmarks-reversed" type="checkbox">
+          <label for="bookmarks-menu-bookmarks-reversed">Reverse</label>
+        </div>
+        <div>
+          <label for="bookmarks-menu-folders">Folders</label>
+          <select id="bookmarks-menu-folders" form="settings">
+            <option value="-1">First</option>
+            <option value="1">Last</option>
+            <option value="0">Inline</option>
+          </select>
         </div>
       </fieldset>
+      <div>
+        <label for="delay">Delay sorting by <input id="delay" type="number" step="1" min="3"> seconds</label>
+      </div>
       <div>
         <button type="submit" class="option">Update</button>
       </div>
